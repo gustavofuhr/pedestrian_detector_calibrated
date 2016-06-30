@@ -1,8 +1,7 @@
 project( pedestrian_detection_calibration )
 cmake_minimum_required(VERSION 2.8)  
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 find_package( OpenCV REQUIRED )
 file(GLOB all_pedestrian_detection_calibration_src
@@ -11,7 +10,7 @@ file(GLOB all_pedestrian_detection_calibration_src
 )
 
 include_directories("include/")
-add_library( pedestrian_detection_calibration SHARED
+add_executable( pedestrian_detection_calibration 
     ${all_pedestrian_detection_calibration_src}
 )
 
