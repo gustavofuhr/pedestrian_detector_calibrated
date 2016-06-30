@@ -1,0 +1,13 @@
+{
+    "dataset": {
+        "image_pref": "/Users/gfuhr/phd/datasets/pets/Crowd_PETS09/S2/L1/Time_12-34/View_001/",
+        "file_ext": ".jpg",
+        "begin_frame": 1,
+        "end_frame": 2000,
+        "d_mask": 4
+    },
+    "detector_opts": {
+        "resize_image": 1.0,
+        "use_calibration": false
+    }
+}
