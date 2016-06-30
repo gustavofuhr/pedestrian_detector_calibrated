@@ -64,8 +64,9 @@ cv::Mat ImageSequence::get_next_frame() {
 	std::stringstream ss;
 	ss << image_pref << format_int(current_frame, d_mask) << "." << file_ext;
 
+	std::cout << "ss " << ss.str() << std::endl;
     // TODO: read in gray scale or what?
-    cv::Mat im = cv::imread(ss.str(), 0);
+    cv::Mat im = cv::imread(ss.str());
 
     current_frame += step_frame;
 

@@ -1,8 +1,9 @@
 {
     "dataset": {
-        "image_pref": "/Users/gfuhr/phd/datasets/pets/Crowd_PETS09/S2/L1/Time_12-34/View_001/",
-        "file_ext": ".jpg",
+        "image_pref": "/Users/gfuhr/study/datasets/pets/Crowd_PETS09/S2/L1/Time_12-34/View_001/frame_",
+        "file_ext": "jpg",
         "begin_frame": 1,
+        "step_frame": 1,
         "end_frame": 2000,
         "d_mask": 4
     },
