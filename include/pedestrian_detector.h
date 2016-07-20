@@ -20,12 +20,23 @@ private:
                         const std::vector<double> weights = std::vector<double>());
     std::vector<BoundingBox> generateCandidatesWCalibration(int imageHeight, int imageWidth, double *maxHeight,
                             float meanHeight = 1800, float stdHeight = 100, float factorStdHeight = 2); 
-    std::vector<cv::Mat> computeImagePyramid(cv::Mat &image, std::vector<float> &pyramid_scales, float scale_parameter, int n_levels = 5);
+    std::vector<cv::Mat> computeImagePyramid(cv::Mat &image, std::vector<float> &pyramid_scales, float scale_parameter, int n_levels = 10);
 
     // std::vector<cv::Point> computeSearchLocations(int imageHeight, int imageWidth, 
     //                         std::vector<cv::Rect> &bbox_candidates, float scale_pyramid);
 
-    void associateScaleToCandidates(std::vector<BoundingBox> &candidates, const std::vector<float> &pyramid_scales);
+    void associateScaleToCandidates(std::vector<BoundingBox> &candidates, const std::vector<float> &pyramid_scales, int original_image_height);
+    int findClosestScaleFromBbox(BoundingBox &bb, int origin_image_height, const std::vector<float> &pyramid_scales);
+    std::vector<BoundingBox> detectWCandidates(std::vector<BoundingBox> &candidates, 
+                                        const std::vector<cv::Mat> &pyramid_images,
+                                        const std::vector<float> &pyramid_scales,
+                                        const float hit_threshold = 1.0);
+    std::vector<BoundingBox> detectBaseline(const std::vector<cv::Mat> pyramid_images, 
+                                        const std::vector<float> pyramid_scales,
+                                        const float padding = 10,
+                                        const float hit_threshold = 1.0);
+
+    void showDetections(cv::Mat &image, std::vector<BoundingBox> &detections);
 
     Json::Value config;
     cv::HOGDescriptor hog;

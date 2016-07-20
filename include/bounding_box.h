@@ -10,7 +10,7 @@ public:
     cv::Rect bb;
     float world_height;
     float score; // TODO: Do I need it?
-    float scale;
+    int pyramid_level;
 
     void plot (cv::Mat &frame, cv::Scalar color);
     
