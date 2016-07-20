@@ -18,8 +18,7 @@ PedestrianDetector::PedestrianDetector(const std::string &config_filename) {
 
 void PedestrianDetector::plotLocations(cv::Mat &in_out_frame, 
                                         const std::vector<cv::Point> &locations,
-                                        const std::vector<double> weights, /* =std::vector<double>()*/
-                                        const cv::Size det_size /*= cv::Size(64,128)*/) {
+                                        const std::vector<double> weights /* =std::vector<double>()*/) {
     for (int i = 0; i < locations.size(); ++i) {
         cv::circle(in_out_frame, locations[i], 8, cv::Scalar(20,20,255), -1);
 
@@ -63,7 +62,7 @@ std::vector<BoundingBox> PedestrianDetector::generateCandidatesWCalibration(int 
     cv::Mat_<float> P3 = P.col(2);
 
     //std::cout << "P3: " << P3 << std::endl;
-    float aspectRatio = 0.41;
+    float aspectRatio = 0.5;
     float minImageHeight = 80;
 
     float stepHeight = 200;
@@ -132,6 +131,33 @@ std::vector<BoundingBox> PedestrianDetector::generateCandidatesWCalibration(int 
     return all_candidates;
 }
 
+
+/*
+    This function return the scale in which the pyramid will be more fitted
+*/
+// float PedestrianDetector::findClosestScaleFromBbox(BoundingBox &bb, int imageHeight)
+// {
+//     // actually here is the size of the the image that changes, the model stays the same
+//     // to see the best fit for the bounding box, one must find the relation between the original
+//     // and then find the closest to the size of the bounding box
+//     int modelHeight = det_size.height;
+//     float min_dist = imageHeight;
+//     int i_min = -1;
+
+//     for (int i = 0; i < opts.pPyramid.computedScales; i++) {
+//         float diff = fabs(opts.modelDs[0]/opts.pPyramid.scales[i] - bb.height);
+
+//         if (diff < min_dist) {
+//             i_min = i;
+//             min_dist = diff;
+//         }
+//         else break;
+
+//     }
+
+//     return i_min;
+// }
+
 /*
 This function transforms the bounding boxes in pairs of scales and top-left points
 */
@@ -139,9 +165,43 @@ This function transforms the bounding boxes in pairs of scales and top-left poin
 
 // }
 
-// std::vector<cv::Mat> computeImagePyramid(cv::Mat &image, float scale_parameter, float max_scale) {
+std::vector<cv::Mat> PedestrianDetector::computeImagePyramid(cv::Mat &image, std::vector<float> &pyramid_scales, float scale_parameter, int n_levels) {
 
-// }
+    // this only downsamples to create a pyramid and set the scale values
+    float current_scale = 1.0;
+    
+    cv::Size curr_size = image.size();
+
+    std::vector<cv::Mat> pyramid;
+    pyramid.push_back(image);
+    pyramid_scales.push_back(1.0);
+
+    for (int i = 0; i < n_levels; ++i) {
+        curr_size.width = curr_size.width/scale_parameter;
+        curr_size.height = curr_size.height/scale_parameter;
+
+        std::cout << "scale_parameter " << scale_parameter << std::endl;
+        std::cout << "curr_size " << curr_size << std::endl;
+        
+        current_scale *= scale_parameter;
+
+        std::cout << "Size now " << curr_size << std::endl;
+
+        cv::Mat im_new;
+        cv::resize(pyramid[pyramid.size()-1], im_new, curr_size);
+        pyramid.push_back(im_new);
+
+        pyramid_scales.push_back(1.0/current_scale);
+    }
+
+    std::cout << "pyramid inside: " << pyramid.size() << std::endl;
+    return pyramid;
+}
+
+
+void PedestrianDetector::associateScaleToCandidates(std::vector<BoundingBox> &candidates, const std::vector<float> &pyramid_scales) {
+    
+}
 
 
 void debugCandidates(cv::Mat &frame, std::vector<BoundingBox> &candidates) {
@@ -174,8 +234,24 @@ void PedestrianDetector::runDetection() {
         if (config["detector_opts"]["use_calibration"].asBool()) {
             candidates = generateCandidatesWCalibration(frame.rows, frame.cols, NULL);
             std::cout << "Its going to debug..." << std::endl;
-            debugCandidates(frame, candidates);
+            // debugCandidates(frame, candidates);
         }
+
+        std::vector<cv::Mat> pyramid_images;
+        std::vector<float> pyramid_scales;
+        pyramid_images = computeImagePyramid(frame, pyramid_scales, 1.05);
+
+        std::cout << "pyramid_images: " << pyramid_images.size();
+
+        for (int i=0; i<pyramid_images.size(); ++i) {
+            std::cout << "pyramid level " << i << std::endl;
+            std::cout << "image size " << pyramid_images[i].size() << std::endl;
+            std::cout << "scale factor " << pyramid_scales[i] << std::endl;
+            cv::imshow("pyr", pyramid_images[i]);
+            cv::waitKey();
+            std::cout << "--" << std::endl;
+        }
+        exit(42);
 
 
         std::vector<cv::Point> found;
