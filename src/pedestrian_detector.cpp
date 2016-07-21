@@ -325,8 +325,8 @@ std::vector<BoundingBox> PedestrianDetector::detectWCandidates(std::vector<Bound
 
 std::vector<BoundingBox> PedestrianDetector::detectBaseline(const std::vector<cv::Mat> pyramid_images, 
                                         const std::vector<float> pyramid_scales,
-                                        const float padding,
-                                        const float hit_threshold) 
+                                        const float hit_threshold,
+                                        const float padding /* = 10*/)
 {
     std::vector<BoundingBox> detections;
     
@@ -382,6 +382,16 @@ void PedestrianDetector::runDetection() {
     vid->open();
 
     std::vector<BoundingBox> candidates;
+    double hit_threshold = config["detector_opts"]["hit_threshold"].asDouble();
+
+    std::ofstream out_file;
+    if (config["output"]["save_log"].asBool()) {
+        //std::cout << "It's going to save a log file in " << config.logFilename << std::endl;
+        out_file.open(config["output"]["out_filename"].asString());
+        if (out_file.fail()) {
+            std::cerr << "open failure: " << strerror(errno) << '\n';
+        }
+    }
 
     while (!vid->has_ended()) {
         cv::Mat frame = vid->get_next_frame();
@@ -395,7 +405,8 @@ void PedestrianDetector::runDetection() {
         std::vector<BoundingBox> detections;
         // if calibration is required and the candidates were not build yet
         if (config["detector_opts"]["use_calibration"].asBool()) {
-            candidates = generateCandidatesWCalibration(frame.rows, frame.cols, NULL);
+            if (candidates.size() == 0)
+                candidates = generateCandidatesWCalibration(frame.rows, frame.cols, NULL);
             // std::cout << "Its going to debug..." << std::endl;
             // debugCandidates(frame, candidates);
             std::vector<cv::Mat> pyramid_images;
@@ -403,7 +414,7 @@ void PedestrianDetector::runDetection() {
             pyramid_images = computeImagePyramid(frame, pyramid_scales, 1.05);
 
             associateScaleToCandidates(candidates, pyramid_scales, frame.rows);
-            detections = detectWCandidates(candidates, pyramid_images, pyramid_scales);
+            detections = detectWCandidates(candidates, pyramid_images, pyramid_scales, hit_threshold);
             
         }
         else {
@@ -411,7 +422,7 @@ void PedestrianDetector::runDetection() {
             std::vector<float> pyramid_scales;
             pyramid_images = computeImagePyramid(frame, pyramid_scales, 1.05);
 
-            detections = detectBaseline(pyramid_images, pyramid_scales);
+            detections = detectBaseline(pyramid_images, pyramid_scales, hit_threshold);
         }
 
         showDetections(frame, detections, cv::Scalar(0,200,0));
@@ -419,14 +430,23 @@ void PedestrianDetector::runDetection() {
         showDetections(frame, detections, cv::Scalar(0,0,200));
 
         
-
+        int f = vid->get_current_frame_number();
         if (config["output"]["save_frames"].asBool()) {
-            int f = vid->get_current_frame_number();
             std::stringstream ss;
             ss << config["output"]["out_folder"].asString() << format_int(f, 4) << ".jpg";
             std::cout << "Saving frame " << ss.str() << std::endl;
             cv::imwrite(ss.str(), frame);
 
+        }
+
+        if (config["output"]["save_log"].asBool()) {
+            for (int i = 0; i < detections.size(); ++i) {
+                out_file << f << " " << detections[i].bb.x << " " 
+                         << detections[i].bb.y << " "  
+                         << detections[i].bb.height << " "
+                         << detections[i].bb.width << " "
+                         << detections[i].score << std::endl;
+            }
         }
     }
 }

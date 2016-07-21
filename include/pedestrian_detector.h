@@ -30,11 +30,11 @@ private:
     std::vector<BoundingBox> detectWCandidates(std::vector<BoundingBox> &candidates, 
                                         const std::vector<cv::Mat> &pyramid_images,
                                         const std::vector<float> &pyramid_scales,
-                                        const float hit_threshold = 1.0);
+                                        const float hit_threshold);
     std::vector<BoundingBox> detectBaseline(const std::vector<cv::Mat> pyramid_images, 
                                         const std::vector<float> pyramid_scales,
-                                        const float padding = 10,
-                                        const float hit_threshold = 1.0);
+                                        const float hit_threshold,
+                                        const float padding = 10);
     std::vector<BoundingBox> nonMaxSuppression(const std::vector<BoundingBox> &detections, 
                                                         const double final_threshold = 1.0);
 
