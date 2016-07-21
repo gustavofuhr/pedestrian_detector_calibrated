@@ -35,8 +35,11 @@ private:
                                         const std::vector<float> pyramid_scales,
                                         const float padding = 10,
                                         const float hit_threshold = 1.0);
+    std::vector<BoundingBox> nonMaxSuppression(const std::vector<BoundingBox> &detections, 
+                                                        const double final_threshold = 1.0);
 
-    void showDetections(cv::Mat &image, std::vector<BoundingBox> &detections);
+
+    void showDetections(cv::Mat &image, std::vector<BoundingBox> &detections, cv::Scalar color);
 
     Json::Value config;
     cv::HOGDescriptor hog;

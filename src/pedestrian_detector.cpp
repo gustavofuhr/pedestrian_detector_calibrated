@@ -50,7 +50,7 @@ void PedestrianDetector::setPMatrix() {
         P = S * P;
     }
 
-    std::cout << "P " << P << std::endl;
+    // std::cout << "P " << P << std::endl;
 }
 
 
@@ -129,7 +129,6 @@ std::vector<BoundingBox> PedestrianDetector::generateCandidatesWCalibration(int 
         *maxHeight = max_h;    
     }
 
-    std::cout << "Its going to return" << std::endl;
     return all_candidates;
 }
 
@@ -161,6 +160,35 @@ int PedestrianDetector::findClosestScaleFromBbox(BoundingBox &bb, int origin_ima
     return i_min;
 }
 
+
+std::vector<BoundingBox> PedestrianDetector::nonMaxSuppression(const std::vector<BoundingBox> &detections, 
+                                                                const double final_threshold) {
+    // create a vector of rectangles and weights
+    std::vector<cv::Rect> rects;
+    std::vector<double> ws;
+    for (int i = 0; i < detections.size(); ++i) {
+        // hack: I duplicate the rects such that they are all grouped with somebody.
+        rects.push_back(detections[i].bb);
+        ws.push_back(detections[i].score);
+        rects.push_back(detections[i].bb);
+        ws.push_back(detections[i].score);
+    }
+
+    hog.groupRectangles(rects, ws, final_threshold, 0.2);
+
+    // for the data that was left, create bounding boxes
+    std::vector<BoundingBox> new_ones;
+    for (int i = 0; i < rects.size(); ++i) {
+        BoundingBox det;
+        det.bb = rects[i];
+        det.score = ws[i];
+        new_ones.push_back(det);
+    }
+
+    return new_ones;
+}
+
+
 /*
 This function transforms the bounding boxes in pairs of scales and top-left points
 */
@@ -183,12 +211,12 @@ std::vector<cv::Mat> PedestrianDetector::computeImagePyramid(cv::Mat &image, std
         curr_size.width = curr_size.width/scale_parameter;
         curr_size.height = curr_size.height/scale_parameter;
 
-        std::cout << "scale_parameter " << scale_parameter << std::endl;
-        std::cout << "curr_size " << curr_size << std::endl;
+        // std::cout << "scale_parameter " << scale_parameter << std::endl;
+        // std::cout << "curr_size " << curr_size << std::endl;
         
         current_scale *= scale_parameter;
 
-        std::cout << "Size now " << curr_size << std::endl;
+        // std::cout << "Size now " << curr_size << std::endl;
 
         cv::Mat im_new;
         cv::resize(pyramid[pyramid.size()-1], im_new, curr_size);
@@ -197,7 +225,7 @@ std::vector<cv::Mat> PedestrianDetector::computeImagePyramid(cv::Mat &image, std
         pyramid_scales.push_back(1.0/current_scale);
     }
 
-    std::cout << "pyramid inside: " << pyramid.size() << std::endl;
+    // std::cout << "pyramid inside: " << pyramid.size() << std::endl;
     return pyramid;
 }
 
@@ -215,9 +243,9 @@ void PedestrianDetector::associateScaleToCandidates(std::vector<BoundingBox> &ca
 
 
 void debugCandidates(cv::Mat &frame, std::vector<BoundingBox> &candidates) {
-    std::cout << "number of candidates" << candidates.size() << std::endl;
+    // std::cout << "number of candidates" << candidates.size() << std::endl;
     for (int i = 0; i < candidates.size(); ++i) {
-        std::cout << "c " << candidates[i].bb << std::endl;
+        // std::cout << "c " << candidates[i].bb << std::endl;
         candidates[i].plot(frame, cv::Scalar(255,0,0));
     }
     cv::imshow("debug", frame);
@@ -336,9 +364,11 @@ std::vector<BoundingBox> PedestrianDetector::detectBaseline(const std::vector<cv
     return detections;
 }
 
-void PedestrianDetector::showDetections(cv::Mat &image, std::vector<BoundingBox> &detections) {
+void PedestrianDetector::showDetections(cv::Mat &image, 
+                                        std::vector<BoundingBox> &detections,
+                                        cv::Scalar color) {
     for (int i=0; i<detections.size(); ++i) {
-        detections[i].plot(image, cv::Scalar(0,200,0));
+        detections[i].plot(image, color);
     }
     cv::imshow("Detections", image);
     cv::waitKey(1.0);
@@ -384,7 +414,11 @@ void PedestrianDetector::runDetection() {
             detections = detectBaseline(pyramid_images, pyramid_scales);
         }
 
-        showDetections(frame, detections);
+        showDetections(frame, detections, cv::Scalar(0,200,0));
+        detections = nonMaxSuppression(detections);
+        showDetections(frame, detections, cv::Scalar(0,0,200));
+
+        
 
         if (config["output"]["save_frames"].asBool()) {
             int f = vid->get_current_frame_number();
