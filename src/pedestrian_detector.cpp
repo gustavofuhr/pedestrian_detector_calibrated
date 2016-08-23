@@ -252,6 +252,9 @@ void debugCandidates(cv::Mat &frame, std::vector<BoundingBox> &candidates) {
     cv::waitKey(0);
 }
 
+double gaussianFunction(double mean, double std, double x) {
+    return exp(-pow(x-mean, 2)/(2*pow(std,2)));
+}
 
 std::vector<BoundingBox> PedestrianDetector::detectWCandidates(std::vector<BoundingBox> &candidates, 
                                         const std::vector<cv::Mat> &pyramid_images,
@@ -297,7 +300,18 @@ std::vector<BoundingBox> PedestrianDetector::detectWCandidates(std::vector<Bound
         det_size_l.height /= pyramid_scales[l];
         for (int i = 0; i < found.size(); ++i) {
             BoundingBox bb;
-            bb.score = weights[i];
+
+            // find candidate to compute the score using gaussian weighthing
+            for (int j=0; j<candidates.size(); ++j) {
+                if (found[i] == candidates[j].bb.tl()*pyramid_scales[l]) {
+                    // add weight for non max suppression.
+                    double new_score = weights[i]*gaussianFunction(1800, 300, candidates[j].world_height);
+                    bb.score = new_score;
+                    std::cout << "det " << i << "score "<< new_score << std::endl;
+                }
+            }
+
+            // bb.score = weights[i];
             cv::Point f = found[i];
             f.x /= pyramid_scales[l];
             f.y /= pyramid_scales[l];
@@ -306,18 +320,6 @@ std::vector<BoundingBox> PedestrianDetector::detectWCandidates(std::vector<Bound
             detections.push_back(bb);
 
         }
-        // for (int i=0; i<found.size(); ++i) {
-        //     // found the candidates that made it
-        //     for (int j=0; j<candidates.size(); ++j) {
-        //         if (found[i] == candidates[j].bb.tl()*pyramid_scales[l]) {
-        //             // add weight for non max suppression.
-        //             candidates[j].score = weights[i];
-        //             detections.push_back(candidates[j]);
-        //         }
-        //     }
-        //     // std::cout << found[i] << " ";
-        // }
-        // std::cout << std::endl;
     }
 
     return detections;
@@ -329,6 +331,7 @@ std::vector<BoundingBox> PedestrianDetector::detectBaseline(const std::vector<cv
                                         const float padding /* = 10*/)
 {
     std::vector<BoundingBox> detections;
+    int n_candidates = 0;
     
     for (int l=0; l<pyramid_images.size(); ++l) {
         // search locations are all points with the detector can handle
@@ -336,6 +339,7 @@ std::vector<BoundingBox> PedestrianDetector::detectBaseline(const std::vector<cv
         for (int x = 0; x < pyramid_images[l].cols; x+=padding) {
             for (int y = 0; y < pyramid_images[l].rows; y+=padding) {
                 search_locations.push_back(cv::Point(x,y));
+                n_candidates++;
             }
         }
 
@@ -360,7 +364,7 @@ std::vector<BoundingBox> PedestrianDetector::detectBaseline(const std::vector<cv
 
         }
     }
-
+ 
     return detections;
 }
 
@@ -397,16 +401,20 @@ void PedestrianDetector::runDetection() {
         cv::Mat frame = vid->get_next_frame();
 
         // resize frame if needed.
-        if (config["detector_opts"]["resize_image"].asDouble() > 1.0) {
+        if (config["detector_opts"]["resize_image"].asDouble() != 1.0) {
             double f = config["detector_opts"]["resize_image"].asDouble();
             cv::resize(frame, frame, cv::Size(), f, f);
         }
+
+        // begin timer
+        clock_t frame_start = clock();
 
         std::vector<BoundingBox> detections;
         // if calibration is required and the candidates were not build yet
         if (config["detector_opts"]["use_calibration"].asBool()) {
             if (candidates.size() == 0)
                 candidates = generateCandidatesWCalibration(frame.rows, frame.cols, NULL);
+
             // std::cout << "Its going to debug..." << std::endl;
             // debugCandidates(frame, candidates);
             std::vector<cv::Mat> pyramid_images;
@@ -425,10 +433,13 @@ void PedestrianDetector::runDetection() {
             detections = detectBaseline(pyramid_images, pyramid_scales, hit_threshold);
         }
 
-        showDetections(frame, detections, cv::Scalar(0,200,0));
+        // showDetections(frame, detections, cv::Scalar(0,200,0));
         detections = nonMaxSuppression(detections);
         showDetections(frame, detections, cv::Scalar(0,0,200));
 
+        clock_t frame_end = clock();
+        std::cout << "TIME: " << (double(frame_end - frame_start) / CLOCKS_PER_SEC) << std::endl;
+        // end timer
         
         int f = vid->get_current_frame_number();
         if (config["output"]["save_frames"].asBool()) {

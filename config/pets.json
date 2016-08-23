@@ -4,7 +4,7 @@
         "file_ext": "jpg",
         "begin_frame": 1,
         "step_frame": 1,
-        "end_frame": 2000,
+        "end_frame": 20,
         "d_mask": 4
     },
     "detector_opts": {
@@ -14,8 +14,8 @@
         "P": [1105.12,-334.65,123.805,-1.86236e+06,-39.7711,20.6844,870.094,-5.12857e+06,0.736718,0.533257,0.146093,-2129.47]
    },
    "output": {
-        "save_frames": false,
-        "out_folder": "out/w_calibration/",
+        "save_frames": true,
+        "out_folder": "out/no_calibration/",
         "save_log": true,
         "out_filename": "out/w_calibration.txt"
    }
