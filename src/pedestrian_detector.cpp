@@ -55,6 +55,22 @@ void PedestrianDetector::setPMatrix() {
 
 
 
+void PedestrianDetector::grow_candidate(BoundingBox &candidate, float factor) {
+    // this function is use to grow the bounding box to adapt to HoG model whose
+    // training was done with some padding around the person.
+    float new_width = candidate.bb.width*(1+factor);
+    float new_height = candidate.bb.height*(1+factor);
+    float new_x = candidate.bb.x - (new_width - candidate.bb.width)/2.0;
+    float new_y = candidate.bb.y - (new_height - candidate.bb.height)/2.0;
+
+    candidate.bb.width = new_width;
+    candidate.bb.height = new_height;
+    candidate.bb.x = new_x;
+    candidate.bb.y = new_y;
+
+}
+
+
 std::vector<BoundingBox> PedestrianDetector::generateCandidatesWCalibration(int imageHeight, int imageWidth, double *maxHeight,
                             float meanHeight/* = 1.8m*/, float stdHeight/* = 0.1m*/, float factorStdHeight/* = 2.0*/) 
 {
@@ -111,6 +127,7 @@ std::vector<BoundingBox> PedestrianDetector::generateCandidatesWCalibration(int 
                     candidate.bb.height         = i_height;
                     candidate.world_height      = wHeight;
 
+                    grow_candidate(candidate, 0.2);
                     if (candidate.bb.x >= 0 && candidate.bb.x+candidate.bb.width < imageWidth && 
                             candidate.bb.y >= 0 && candidate.bb.y+candidate.bb.height < imageHeight &&
                             candidate.bb.height >= minImageHeight) {

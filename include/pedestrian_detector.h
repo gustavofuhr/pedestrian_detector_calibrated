@@ -40,6 +40,7 @@ private:
 
 
     void showDetections(cv::Mat &image, std::vector<BoundingBox> &detections, cv::Scalar color);
+    void grow_candidate(BoundingBox &candidate, float factor);
 
     Json::Value config;
     cv::HOGDescriptor hog;
