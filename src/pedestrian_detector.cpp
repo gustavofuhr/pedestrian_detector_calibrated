@@ -109,6 +109,7 @@ std::vector<BoundingBox> PedestrianDetector::generateCandidatesWCalibration(int 
 
             // now create all_candidates at different heights
             for (float h = -stdHeight * factorStdHeight; h <= stdHeight * factorStdHeight; h+= stepHeight) {
+                // std::cout << h << std::endl;
                 float wHeight = meanHeight + h;
 
                 int head_v = (int)((Xw*P(1,0) + Yw*P(1,1) + wHeight*P(1,2) + P(1,3))/(Xw*P(2,0) + Yw*P(2,1) + wHeight*P(2,2) + P(2,3)));
@@ -138,6 +139,8 @@ std::vector<BoundingBox> PedestrianDetector::generateCandidatesWCalibration(int 
                 }
 
             }
+
+            // exit(10);
             
         }
     }
@@ -191,7 +194,7 @@ std::vector<BoundingBox> PedestrianDetector::nonMaxSuppression(const std::vector
         ws.push_back(detections[i].score);
     }
 
-    hog.groupRectangles(rects, ws, final_threshold, 0.2);
+    hog.groupRectangles(rects, ws, final_threshold, 0.1);
 
     // for the data that was left, create bounding boxes
     std::vector<BoundingBox> new_ones;
@@ -283,7 +286,8 @@ std::vector<BoundingBox> PedestrianDetector::detectWCandidates(std::vector<Bound
     // for all the levels of the pyramid ...
     for (int l=0; l<pyramid_images.size(); ++l) {
         // ... search for candidates at this level and put them on search locations.
-        // std::cout << std::endl << "LEVEL: " << l << std::endl;
+        std::cout << std::endl << "LEVEL: " << l << std::endl;
+        std::cout << std::endl << "pyramid_scales[l]: " << pyramid_scales[l] << std::endl;
         // TODO: obviously I could order them by scale and reduce the complexity of this.
         std::vector<cv::Point> search_locations;
         for (int i=0; i<candidates.size(); ++i) { 
@@ -301,6 +305,8 @@ std::vector<BoundingBox> PedestrianDetector::detectWCandidates(std::vector<Bound
                 search_locations.push_back(pt);
             }
         }
+
+        std::cout << "search_locations size" << search_locations.size() << std::endl;
 
         // detect in this level.
         std::vector<cv::Point> found;
@@ -322,9 +328,9 @@ std::vector<BoundingBox> PedestrianDetector::detectWCandidates(std::vector<Bound
             for (int j=0; j<candidates.size(); ++j) {
                 if (found[i] == candidates[j].bb.tl()*pyramid_scales[l]) {
                     // add weight for non max suppression.
-                    double new_score = weights[i]*gaussianFunction(1800, 300, candidates[j].world_height);
+                    double new_score = weights[i]*gaussianFunction(1.800, 0.300, candidates[j].world_height);
                     bb.score = new_score;
-                    std::cout << "det " << i << "score "<< new_score << std::endl;
+                    //std::cout << "det " << i << "score "<< new_score << std::endl;
                 }
             }
 
@@ -381,6 +387,8 @@ std::vector<BoundingBox> PedestrianDetector::detectBaseline(const std::vector<cv
 
         }
     }
+
+    std::cout << "baseline number of candidates " << n_candidates << std::endl;
  
     return detections;
 }
@@ -429,8 +437,10 @@ void PedestrianDetector::runDetection() {
         std::vector<BoundingBox> detections;
         // if calibration is required and the candidates were not build yet
         if (config["detector_opts"]["use_calibration"].asBool()) {
-            if (candidates.size() == 0)
+            if (candidates.size() == 0) {
                 candidates = generateCandidatesWCalibration(frame.rows, frame.cols, NULL);
+                std::cout << "Number of candidates: " << candidates.size() << std::endl; 
+            }
 
             // std::cout << "Its going to debug..." << std::endl;
             // debugCandidates(frame, candidates);
@@ -440,6 +450,8 @@ void PedestrianDetector::runDetection() {
 
             associateScaleToCandidates(candidates, pyramid_scales, frame.rows);
             detections = detectWCandidates(candidates, pyramid_images, pyramid_scales, hit_threshold);
+
+            std::cout << "Number of detections: " << detections.size() << std::endl;
             
         }
         else {
@@ -450,7 +462,7 @@ void PedestrianDetector::runDetection() {
             detections = detectBaseline(pyramid_images, pyramid_scales, hit_threshold);
         }
 
-        // showDetections(frame, detections, cv::Scalar(0,200,0));
+        showDetections(frame, detections, cv::Scalar(0,200,0));
         detections = nonMaxSuppression(detections);
         showDetections(frame, detections, cv::Scalar(0,0,200));
 
