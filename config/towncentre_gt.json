@@ -1,0 +1,22 @@
+{
+    "dataset": {
+        "image_pref": "/home/gfuhr/phd/datasets/townCentre/roc_frames/frame",
+        "file_ext": "png",
+        "begin_frame": 1,
+        "step_frame": 1,
+        "end_frame": 500,
+        "d_mask": 5
+    },
+    "detector_opts": {
+        "resize_image": 1.0,
+        "hit_threshold": -1.0,
+        "use_calibration": true,
+        "P": [2043.53,-1964.96,-392.23,11727.81,-399.46,-136.49,-2717.20,17020.96,0.83,0.44,-0.34,12.39]
+   },
+   "output": {
+        "save_frames": false,
+        "out_folder": "out/no_calibration/",
+        "save_log": true,
+        "out_filename": "out/w_calibration.txt"
+   }
+}
