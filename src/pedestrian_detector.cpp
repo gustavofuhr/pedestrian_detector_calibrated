@@ -83,7 +83,7 @@ std::vector<BoundingBox> PedestrianDetector::generateCandidatesWCalibration(int 
     float aspectRatio = 0.5;
     float minImageHeight = 80;
 
-    float stepHeight = 100;
+    float stepHeight = 200;
     int totalCandidates = 0;
 
     std::vector<BoundingBox> all_candidates;
