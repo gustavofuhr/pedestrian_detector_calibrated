@@ -19,7 +19,7 @@ private:
                         const std::vector<cv::Point> &locations,
                         const std::vector<double> weights = std::vector<double>());
     std::vector<BoundingBox> generateCandidatesWCalibration(int imageHeight, int imageWidth, double *maxHeight,
-                            float meanHeight = 1800, float stdHeight = 100, float factorStdHeight = 2); 
+                            float meanHeight = 1.800, float stdHeight = 0.100, float factorStdHeight = 2); 
     std::vector<cv::Mat> computeImagePyramid(cv::Mat &image, std::vector<float> &pyramid_scales, float scale_parameter, int n_levels = 10);
 
     // std::vector<cv::Point> computeSearchLocations(int imageHeight, int imageWidth, 

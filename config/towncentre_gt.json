@@ -1,6 +1,6 @@
 {
     "dataset": {
-        "image_pref": "/home/gfuhr/phd/datasets/townCentre/roc_frames/frame",
+        "image_pref": "/Users/gfuhr/study/datasets/towncentre/roc_frames/frame",
         "file_ext": "png",
         "begin_frame": 1,
         "step_frame": 1,

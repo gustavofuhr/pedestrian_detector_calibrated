@@ -83,7 +83,7 @@ std::vector<BoundingBox> PedestrianDetector::generateCandidatesWCalibration(int 
     float aspectRatio = 0.5;
     float minImageHeight = 80;
 
-    float stepHeight = 200;
+    float stepHeight = 0.200;
     int totalCandidates = 0;
 
     std::vector<BoundingBox> all_candidates;
@@ -376,7 +376,7 @@ std::vector<BoundingBox> PedestrianDetector::detectWCandidates(std::vector<Bound
                 for (int j=0; j<candidates.size(); ++j) {
                     if (found[i] == candidates[j].bb.tl()*pyramid_scales[l]) {
                         // add weight for non max suppression.
-                        double new_score = weights[i]*gaussianFunction(1800, 300, candidates[j].world_height);
+                        double new_score = weights[i]*gaussianFunction(1.800, 0.300, candidates[j].world_height);
                         bb.score = new_score;
                         //std::cout << "det " << i << "score "<< new_score << std::endl;
                     }
